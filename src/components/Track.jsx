@@ -89,7 +89,7 @@ export default function Track() {
         <div key={`lane-${rank}`} style={{
           position:'absolute', left:0, right:0,
           top: rank * bandH, height: bandH,
-          background: ['rgba(255,184,0,.055)','rgba(192,192,192,.035)','rgba(205,127,50,.035)'][rank],
+          background: ['rgba(255,184,0,.18)','rgba(192,192,192,.10)','rgba(205,127,50,.10)'][rank],
           pointerEvents:'none', zIndex:0,
         }} />
       ))}
