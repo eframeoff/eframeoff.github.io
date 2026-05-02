@@ -84,6 +84,16 @@ export default function Track() {
         pointerEvents:'none', zIndex:4,
       }}>FINISH</div>
 
+      {/* ── LANE HIGHLIGHTS top 3 ───────────── */}
+      {byScore.slice(0, Math.min(3, count)).map(([id], rank) => (
+        <div key={`lane-${rank}`} style={{
+          position:'absolute', left:0, right:0,
+          top: rank * bandH, height: bandH,
+          background: ['rgba(255,184,0,.055)','rgba(192,192,192,.035)','rgba(205,127,50,.035)'][rank],
+          pointerEvents:'none', zIndex:0,
+        }} />
+      ))}
+
       {/* ── ROAD DASHES ──────────────────────── */}
       <div style={{
         position:'absolute',

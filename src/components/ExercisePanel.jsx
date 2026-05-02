@@ -275,6 +275,9 @@ export default function ExercisePanel({ showToast, onEvent, onMilestone, onNewAc
     const overtaken  = Object.entries(state.players).filter(([id, p]) =>
       id !== myId && p.steps > curSteps && p.steps <= newTotal
     );
+    const sortedBySteps = Object.entries(state.players).sort((a,b) => (b[1].steps||0) - (a[1].steps||0));
+    const firstPlaceId  = sortedBySteps[0]?.[0];
+    const tookFirstPlace = firstPlaceId !== myId && overtaken.some(([id]) => id === firstPlaceId);
 
     const upd = {};
     upd[`fitrace/players/${myId}/steps`]         = newTotal;
@@ -321,8 +324,8 @@ export default function ExercisePanel({ showToast, onEvent, onMilestone, onNewAc
 
     await update(ref(db), upd);
 
-    // Log overtake events separately
-    if (overtaken.length > 0) {
+    // Log overtake + first_place events
+    if (overtaken.length > 0 || tookFirstPlace) {
       const overtakeUpds = {};
       overtaken.forEach(([, p]) => {
         const ok = `${Date.now() + Math.random()}_ovt`;
@@ -332,7 +335,48 @@ export default function ExercisePanel({ showToast, onEvent, onMilestone, onNewAc
           target: p.name, targetUid: p.id || '',
         };
       });
+      if (tookFirstPlace) {
+        const fk = `${Date.now() + Math.random()}_first`;
+        overtakeUpds[`fitrace/activityLog/${fk}`] = {
+          type: 'first_place', ts: Date.now(),
+          actor: me.name, actorUid: myId,
+        };
+      }
       update(ref(db), overtakeUpds);
+    }
+
+    // Log team events
+    const wkTeams = Array.isArray(state.teams?.[state.currentWeek]) ? state.teams[state.currentWeek] : [];
+    if (wkTeams.length > 1) {
+      const myTIdx = wkTeams.findIndex(t => t?.members?.includes(myId));
+      if (myTIdx !== -1) {
+        const teamScore = (t, useNew) =>
+          (t.members||[]).reduce((s, id) => s + (id === myId && useNew ? newTotal : (state.players[id]?.steps||0)), 0);
+        const oldScore = teamScore(wkTeams[myTIdx], false);
+        const newScore = teamScore(wkTeams[myTIdx], true);
+        const passed   = wkTeams.filter((t,i) => i !== myTIdx && teamScore(t,false) > oldScore && teamScore(t,false) <= newScore);
+        const wasFirst = wkTeams.every((t,i) => i === myTIdx || teamScore(t,false) <= oldScore);
+        const nowFirst = wkTeams.every((t,i) => i === myTIdx || teamScore(t,false) <= newScore);
+        if (passed.length > 0 || (!wasFirst && nowFirst)) {
+          const tUpd = {};
+          const myTeamName = wkTeams[myTIdx].name || 'Команда';
+          passed.forEach(t => {
+            const k = `${Date.now() + Math.random()}_tovt`;
+            tUpd[`fitrace/activityLog/${k}`] = {
+              type:'team_overtake', ts:Date.now(),
+              actorTeam:myTeamName, targetTeam:t.name||'Команда', actorId:myId,
+            };
+          });
+          if (!wasFirst && nowFirst) {
+            const k = `${Date.now() + Math.random()}_tfirst`;
+            tUpd[`fitrace/activityLog/${k}`] = {
+              type:'team_first', ts:Date.now(),
+              actorTeam:myTeamName, actor:me.name, actorId:myId,
+            };
+          }
+          update(ref(db), tUpd);
+        }
+      }
     }
 
     // Telegram notifications (fire-and-forget)

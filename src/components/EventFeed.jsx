@@ -14,6 +14,23 @@ function timeAgoShort(ts) {
 function buildText(e, players) {
   const color = players[e.uid]?.color || "#FFB800";
 
+  if (e.type === "first_place") {
+    const MSGS = [
+      () => `${e.actor} ЗАХВАТИЛ ПЕРВОЕ МЕСТО! Трон занят.`,
+      () => `${e.actor} вырвался на вершину. Остальным — догонять.`,
+      () => `ВНИМАНИЕ: ${e.actor} теперь лидер. Скуфы в панике.`,
+    ];
+    return { icon: "👑", text: MSGS[Math.abs(e.ts||0) % MSGS.length](), color: "#FFB800" };
+  }
+
+  if (e.type === "team_overtake") {
+    return { icon: "⚡", text: `Команда «${e.actorTeam}» обогнала «${e.targetTeam}»! Командный щит поднят.`, color: "#00CFFF" };
+  }
+
+  if (e.type === "team_first") {
+    return { icon: "🏆", text: `Команда «${e.actorTeam}» вышла на ПЕРВОЕ МЕСТО! ${e.actor} тащит команду.`, color: "#FFB800" };
+  }
+
   if (e.type === "overtake") {
     const MSGS = [
       () => `${e.actor} обогнал ${e.target}! Слышишь топот?`,

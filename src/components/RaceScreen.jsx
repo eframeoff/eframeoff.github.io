@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGame } from '../GameContext.jsx';
-import { daysUntilSummer, untilMonday, todayStr, isOnline, timeAgo } from '../utils.js';
+import { daysUntilSummer, untilMonday, todayStr, isOnline, timeAgo, isoWeek } from '../utils.js';
 import Avatar from './Avatar.jsx';
 import Track from './Track.jsx';
 import ExercisePanel from './ExercisePanel.jsx';
@@ -29,22 +29,26 @@ function TodayStats({ state, myId }) {
   const sorted = Object.entries(state.players).sort((a, b) => (b[1].steps || 0) - (a[1].steps || 0));
   return (
     <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
-      <table className="stats-table" style={{ minWidth:460 }}>
+      <table className="stats-table" style={{ minWidth:560 }}>
         <thead>
           <tr>
             <th>Игрок</th>
             <th>🏋️</th><th>💪</th><th>🤸</th><th>🦵</th><th>🧱</th><th>🔥</th><th>🏃км</th>
+            <th>🍺</th><th>🥃</th><th>🍷</th>
             <th>Очки</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map(([id, p]) => {
-            const d     = state.daily?.[today]?.[id] || {};
-            const pull  = d.pullups||0, push = d.pushups||0, dips = d.dips||0;
-            const sq    = d.squats||0,  abs  = d.abs||0,     press = d.press||0, run  = d.run_km||0;
-            const pts  = Math.round(pull*4+push*2+dips*3+sq+abs*15+press*0.3+run*40);
-            const isMe = id === myId;
-            const c    = (v) => <span style={{ color:v?p.color:'var(--dim)', fontWeight:v?900:400 }}>{v||'—'}</span>;
+            const d      = state.daily?.[today]?.[id] || {};
+            const pull   = d.pullups||0, push = d.pushups||0, dips = d.dips||0;
+            const sq     = d.squats||0,  abs  = d.abs||0,     press = d.press||0, run = d.run_km||0;
+            const beer   = d.beer||0,    spirit = d.spirit||0, wine = d.wine||0;
+            const pts    = Math.round(pull*4+push*2+dips*3+sq+abs*15+press*0.3+run*40+beer*(-20)+spirit*(-30)+wine*10);
+            const isMe   = id === myId;
+            const c      = (v) => <span style={{ color:v?p.color:'var(--dim)', fontWeight:v?900:400 }}>{v||'—'}</span>;
+            const cBad   = (v) => <span style={{ color:v?'var(--red)':'var(--dim)', fontWeight:v?900:400 }}>{v||'—'}</span>;
+            const cWine  = (v) => <span style={{ color:v?'#39FF14':'var(--dim)', fontWeight:v?900:400 }}>{v||'—'}</span>;
             return (
               <tr key={id} style={{ background:isMe?'rgba(255,184,0,.04)':'transparent' }}>
                 <td>
@@ -57,6 +61,7 @@ function TodayStats({ state, myId }) {
                 </td>
                 <td>{c(pull)}</td><td>{c(push)}</td><td>{c(dips)}</td>
                 <td>{c(sq)}</td><td>{c(abs)}</td><td>{c(press)}</td><td>{c(run)}</td>
+                <td>{cBad(beer)}</td><td>{cBad(spirit)}</td><td>{cWine(wine)}</td>
                 <td><span style={{ fontWeight:900, color:pts?p.color:'var(--dim)', fontFamily:"'Oswald'" }}>{pts||'—'}</span></td>
               </tr>
             );
@@ -70,12 +75,21 @@ function TodayStats({ state, myId }) {
 
 
 function ExerciseTooltip({ state, playerId, color, onClose }) {
-  const totals = { pullups:0, pushups:0, dips:0, squats:0, abs:0, press:0, run_km:0, beer:0, spirit:0, wine:0 };
-  Object.values(state.daily || {}).forEach(dayData => {
-    const d = dayData[playerId];
-    if (!d) return;
-    Object.keys(totals).forEach(k => { totals[k] += d[k] || 0; });
-  });
+  const [tab, setTab] = useState('week');
+  const currentWeek = state.currentWeek;
+
+  function calcTotals(weekOnly) {
+    const t = { pullups:0, pushups:0, dips:0, squats:0, abs:0, press:0, run_km:0, beer:0, spirit:0, wine:0 };
+    Object.entries(state.daily || {}).forEach(([dateStr, dayData]) => {
+      if (weekOnly && isoWeek(new Date(dateStr)) !== currentWeek) return;
+      const d = dayData[playerId];
+      if (!d) return;
+      Object.keys(t).forEach(k => { t[k] += d[k] || 0; });
+    });
+    return t;
+  }
+
+  const totals = calcTotals(tab === 'week');
   const totalPts = Math.round(
     totals.pullups*4 + totals.pushups*2 + totals.dips*3 +
     totals.squats*1  + totals.abs*15   + totals.press*0.3 + totals.run_km*40 +
@@ -83,16 +97,16 @@ function ExerciseTooltip({ state, playerId, color, onClose }) {
   );
 
   const rows = [
-    { icon:'🏋️', label:'Подтягивания', val:totals.pullups, pts:totals.pullups*4,   bad:false },
-    { icon:'💪',  label:'Отжимания',    val:totals.pushups, pts:totals.pushups*2,   bad:false },
-    { icon:'🤸',  label:'Брусья',       val:totals.dips,    pts:totals.dips*3,      bad:false },
-    { icon:'🦵',  label:'Приседания',   val:totals.squats,  pts:totals.squats,      bad:false },
-    { icon:'🧱',  label:'Планка (мин)', val:totals.abs,     pts:totals.abs*15,      bad:false },
-    { icon:'🔥',  label:'Пресс (×10)',   val:totals.press,   pts:totals.press*0.3,   bad:false },
-    { icon:'🏃',  label:'Бег (км)',     val:totals.run_km,  pts:totals.run_km*40,   bad:false },
-    { icon:'🍺',  label:'Пиво',         val:totals.beer,    pts:totals.beer*(-20),  bad:true  },
-    { icon:'🥃',  label:'Крепкое',      val:totals.spirit,  pts:totals.spirit*(-30),bad:true  },
-    { icon:'🍷',  label:'Вино',         val:totals.wine,    pts:totals.wine*10,     bad:false, wine:true },
+    { icon:'🏋️', label:'Подтягивания', val:totals.pullups, pts:totals.pullups*4    },
+    { icon:'💪',  label:'Отжимания',    val:totals.pushups, pts:totals.pushups*2    },
+    { icon:'🤸',  label:'Брусья',       val:totals.dips,    pts:totals.dips*3       },
+    { icon:'🦵',  label:'Приседания',   val:totals.squats,  pts:totals.squats       },
+    { icon:'🧱',  label:'Планка (мин)', val:totals.abs,     pts:totals.abs*15       },
+    { icon:'🔥',  label:'Пресс (×10)',  val:totals.press,   pts:totals.press*0.3    },
+    { icon:'🏃',  label:'Бег (км)',     val:totals.run_km,  pts:totals.run_km*40    },
+    { icon:'🍺',  label:'Пиво',         val:totals.beer,    pts:totals.beer*(-20)   },
+    { icon:'🥃',  label:'Крепкое',      val:totals.spirit,  pts:totals.spirit*(-30) },
+    { icon:'🍷',  label:'Вино',         val:totals.wine,    pts:totals.wine*10      },
   ].filter(r => r.val > 0);
 
   return (
@@ -107,10 +121,18 @@ function ExerciseTooltip({ state, playerId, color, onClose }) {
         boxShadow:`0 0 30px ${color}33`,
         animation:'mPop .25s cubic-bezier(.34,1.56,.64,1)',
       }}>
-        <div style={{
-          fontFamily:"'Oswald',sans-serif", fontSize:'.7rem', fontWeight:700,
-          color:'var(--dim)', textTransform:'uppercase', letterSpacing:2, marginBottom:14,
-        }}>📊 Статистика за неделю</div>
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+          {[['week','За неделю'], ['all','За всё время']].map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key)} style={{
+              flex:1, padding:'7px 0', borderRadius:8, border:'none',
+              background: tab === key ? color : 'var(--surf2)',
+              color: tab === key ? '#000' : 'var(--dim)',
+              fontFamily:"'Oswald',sans-serif",
+              fontSize:'.75rem', fontWeight:700, cursor:'pointer', transition:'all .15s',
+            }}>{label}</button>
+          ))}
+        </div>
 
         {rows.length === 0
           ? <div style={{ color:'var(--dim)', fontSize:'.85rem', textAlign:'center', padding:'10px 0' }}>Нет данных</div>
@@ -263,7 +285,6 @@ export default function RaceScreen({ onBack, showToast, onEvent, onMilestone, on
           </div>
           <button className="btn-sm" onClick={onBack}>← Игроки</button>
           <button className="btn-sm" onClick={() => setShowWeight(true)}>⚖️ Вес</button>
-          <button className="btn-sm" onClick={() => document.getElementById('chat-anchor')?.scrollIntoView({ behavior:'smooth' })}>💬 Чат</button>
         </div>
       </div>
 
