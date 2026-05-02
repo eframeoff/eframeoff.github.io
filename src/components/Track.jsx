@@ -85,14 +85,29 @@ export default function Track() {
       }}>FINISH</div>
 
       {/* ── LANE HIGHLIGHTS top 3 ───────────── */}
-      {byScore.slice(0, Math.min(3, count)).map(([id], rank) => (
-        <div key={`lane-${rank}`} style={{
-          position:'absolute', left:0, right:0,
-          top: rank * bandH, height: bandH,
-          background: ['rgba(255,184,0,.18)','rgba(192,192,192,.10)','rgba(205,127,50,.10)'][rank],
-          pointerEvents:'none', zIndex:0,
-        }} />
-      ))}
+      {byScore.slice(0, Math.min(3, count)).map(([id], rank) => {
+        const colors = ['#FFB800','#C0C0C0','#CD7F32'];
+        const bg     = ['rgba(255,184,0,.22)','rgba(192,192,192,.13)','rgba(205,127,50,.13)'];
+        const labels = ['👑 1','🥈 2','🥉 3'];
+        const c = colors[rank];
+        return (
+          <div key={`lane-${rank}`} style={{
+            position:'absolute', left:0, right:0,
+            top: rank * bandH, height: bandH,
+            background: bg[rank],
+            borderLeft: `3px solid ${c}`,
+            pointerEvents:'none', zIndex:0,
+          }}>
+            <div style={{
+              position:'absolute', left:6, top:'50%',
+              transform:'translateY(-50%)',
+              fontFamily:"'Press Start 2P',monospace",
+              fontSize:'.32rem', color: c,
+              opacity:.7, letterSpacing:1,
+            }}>{labels[rank]}</div>
+          </div>
+        );
+      })}
 
       {/* ── ROAD DASHES ──────────────────────── */}
       <div style={{
