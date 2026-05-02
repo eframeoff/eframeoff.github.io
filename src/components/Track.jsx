@@ -102,7 +102,7 @@ export default function Track() {
               position:'absolute', left:6, top:'50%',
               transform:'translateY(-50%)',
               fontFamily:"'Press Start 2P',monospace",
-              fontSize:'.32rem', color: c,
+              fontSize:'1.1rem', color: c,
               opacity:.7, letterSpacing:1,
             }}>{labels[rank]}</div>
           </div>
