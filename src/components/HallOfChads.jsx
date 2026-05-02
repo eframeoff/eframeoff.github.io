@@ -85,7 +85,7 @@ export default function HallOfChads() {
   }
 
   return (
-    <div style={{ marginBottom:16 }}>
+    <div>
       <div style={{
         position:'relative',
         background:'linear-gradient(135deg,#1A1200,#0E0A00)',

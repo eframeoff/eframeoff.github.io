@@ -6,6 +6,7 @@ import Track from './Track.jsx';
 import ExercisePanel from './ExercisePanel.jsx';
 import Chat from './Chat.jsx';
 import HallOfChads from './HallOfChads.jsx';
+import DayChad from './DayChad.jsx';
 import WeightChart, { WeightModal } from './WeightTracker.jsx';
 import AchievementBadges from './AchievementBadges.jsx';
 import TeamBattle from './TeamBattle.jsx';
@@ -268,8 +269,11 @@ export default function RaceScreen({ onBack, showToast, onEvent, onMilestone, on
 
       {showWeight && <WeightModal onClose={() => setShowWeight(false)} />}
 
-      {/* Hall of Chads */}
-      <HallOfChads />
+      {/* Hall of Chads + Day Chad */}
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', marginBottom:16 }}>
+        <div style={{ flex:1, minWidth:0 }}><HallOfChads /></div>
+        <DayChad />
+      </div>
 
       {/* Track */}
       <div className="track-box" style={{ marginBottom: 14 }}>
