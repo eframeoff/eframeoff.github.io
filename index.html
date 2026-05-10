@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>С Днём Рождения</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --rose:  #e8a0bf;
+    --blush: #f9d1e0;
+    --deep:  #7b2d5e;
+    --gold:  #c9935a;
+    --cream: #fdf6f0;
+    --dark:  #2a1a1f;
+  }
+
+  html, body { height: 100%; font-family: 'Cormorant Garamond', serif; background: var(--cream); color: var(--dark); overflow-x: hidden; }
+
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .7s ease, transform .7s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(1.03); }
+
+  /* BG */
+  .bg {
+    position: fixed; inset: 0; z-index: -1;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, #f9d1e055 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, #e8a0bf44 0%, transparent 55%),
+      radial-gradient(ellipse 50% 50% at 55% 40%, #c9935a22 0%, transparent 50%),
+      linear-gradient(160deg, #fdf6f0 0%, #f5e6ef 50%, #fdf0e8 100%);
+  }
+  .petals { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .petal  { position: absolute; border-radius: 50% 50% 50% 0 / 60% 60% 40% 40%; opacity: 0; animation: fall linear infinite; }
+  @keyframes fall {
+    0%   { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+    5%   { opacity: .7; }
+    90%  { opacity: .4; }
+    100% { opacity: 0; transform: translateY(110vh) rotate(360deg) translateX(60px); }
+  }
+
+  /* CODE SCREEN */
+  #screen-code { flex-direction: column; gap: 1.8rem; text-align: center; padding: 2rem; }
+  .lock-icon   { font-size: 3.5rem; animation: pulse 2.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.08); } }
+  #screen-code h1 { font-family:'Playfair Display',serif; font-size: clamp(1.6rem,5vw,2.4rem); font-weight:400; color:var(--deep); letter-spacing:.02em; }
+  #screen-code p  { font-size:1.05rem; color:#a07090; font-style:italic; letter-spacing:.03em; }
+
+  .code-input-wrap { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; }
+  .code-digit {
+    width:2.8rem; height:3.4rem;
+    border:1.5px solid #d4a0c0; border-radius:.5rem;
+    background:rgba(255,255,255,.7);
+    text-align:center; font-size:1.6rem;
+    font-family:'Playfair Display',serif; color:var(--deep);
+    outline:none;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    backdrop-filter:blur(4px);
+  }
+  .code-digit:focus { border-color:var(--rose); box-shadow:0 0 0 3px rgba(232,160,191,.3); background:#fff; }
+  .code-digit.error { border-color:#e07070; animation:shake .35s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .error-msg { color:#c0506a; font-size:.95rem; font-style:italic; min-height:1.4em; }
+
+  .btn-enter {
+    padding:.75rem 2.5rem;
+    background:linear-gradient(135deg,var(--rose),var(--deep));
+    color:#fff; border:none; border-radius:2rem;
+    font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:.06em;
+    cursor:pointer; box-shadow:0 4px 20px rgba(123,45,94,.25);
+    transition:transform .2s, box-shadow .2s;
+  }
+  .btn-enter:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(123,45,94,.35); }
+
+  /* CONGRATS SCREEN */
+  #screen-congrats {
+    flex-direction:column; align-items:center; justify-content:flex-start;
+    padding:3rem 1.5rem 5rem; overflow-y:auto; gap:0;
+  }
+  .confetti-burst { position:fixed; inset:0; pointer-events:none; z-index:10; }
+
+  .congrats-header { text-align:center; margin-bottom:2rem; animation:fadeUp .9s ease both; }
+  .congrats-header .subtitle { font-size:clamp(.85rem,2vw,1rem); color:var(--gold); letter-spacing:.18em; text-transform:uppercase; margin-bottom:.5rem; }
+  .congrats-header h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,7vw,3.8rem); font-weight:700; line-height:1.1; color:var(--deep); }
+  .congrats-header h1 em { font-style:italic; color:var(--rose); }
+
+  .photo-frame {
+    position:relative; width:min(320px,82vw);
+    animation:fadeUp .9s .2s ease both; margin-bottom:2.2rem;
+  }
+  .photo-frame::before {
+    content:''; position:absolute; inset:-10px;
+    border:1.5px solid var(--rose); border-radius:1rem; opacity:.5; transform:rotate(2deg);
+  }
+  .photo-frame::after {
+    content:''; position:absolute; inset:-18px;
+    border:1px solid var(--gold); border-radius:1.2rem; opacity:.25; transform:rotate(-1.5deg);
+  }
+  .photo-frame img {
+    width:100%; border-radius:.7rem; display:block;
+    box-shadow:0 12px 40px rgba(123,45,94,.18);
+    object-fit:cover; aspect-ratio:3/4;
+  }
+
+  .congrats-text { max-width:500px; text-align:center; animation:fadeUp .9s .35s ease both; margin-bottom:2.8rem; padding:0 .5rem; }
+  .congrats-text p { font-size:clamp(1rem,2.6vw,1.2rem); line-height:1.9; color:#4a2a3a; font-weight:300; margin-bottom:1rem; }
+  .congrats-text strong { font-weight:600; color:var(--deep); }
+
+  .divider { width:80px; height:1px; background:linear-gradient(90deg,transparent,var(--rose),transparent); margin:1.4rem auto; }
+
+  .btn-gift {
+    display:inline-flex; align-items:center; gap:.8rem;
+    padding:1.1rem 3rem;
+    background:linear-gradient(135deg,#c9935a 0%,#e8a0bf 50%,#7b2d5e 100%);
+    background-size:200% 200%;
+    color:#fff; border:none; border-radius:3rem;
+    font-family:'Playfair Display',serif; font-size:clamp(1.1rem,3vw,1.4rem); letter-spacing:.05em;
+    cursor:pointer;
+    box-shadow:0 6px 30px rgba(123,45,94,.35);
+    animation:fadeUp .9s .5s ease both, gradientShift 4s ease-in-out infinite;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .btn-gift:hover { transform:translateY(-3px) scale(1.03); box-shadow:0 14px 40px rgba(123,45,94,.45); }
+  .gift-icon { font-size:1.5em; animation:bounce 1.8s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-5px) rotate(5deg)} }
+  @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+  /* GAME SCREEN */
+  #screen-game {
+    flex-direction:column; align-items:center; justify-content:flex-start;
+    padding:0; overflow:hidden; gap:0;
+  }
+  #game-canvas-wrap {
+    position:relative; width:100%; height:100%;
+    overflow:hidden;
+  }
+  #game-ui {
+    position:absolute; top:0; left:0; right:0; z-index:5;
+    display:flex; flex-direction:column; align-items:center;
+    padding:1.2rem 1rem .5rem;
+    pointer-events:none;
+  }
+  .game-hint {
+    font-family:'Playfair Display',serif; font-style:italic;
+    font-size:clamp(1rem,3vw,1.3rem); color:var(--deep);
+    background:rgba(253,246,240,.88); backdrop-filter:blur(6px);
+    padding:.5rem 1.4rem; border-radius:2rem;
+    border:1px solid rgba(232,160,191,.5);
+    margin-bottom:.8rem;
+    box-shadow:0 2px 12px rgba(123,45,94,.1);
+  }
+  .game-progress {
+    display:flex; gap:.5rem; align-items:center;
+  }
+  .prog-cell {
+    width:2.6rem; height:2.6rem;
+    border-radius:.5rem;
+    background:rgba(255,255,255,.7);
+    border:1.5px solid rgba(232,160,191,.6);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700;
+    color:transparent;
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 2px 8px rgba(123,45,94,.08);
+  }
+  .prog-cell.filled {
+    background:linear-gradient(135deg,var(--rose),var(--deep));
+    color:#fff; border-color:var(--deep);
+    transform:scale(1.15);
+    box-shadow:0 4px 16px rgba(123,45,94,.3);
+  }
+
+  /* BALLOON */
+  .balloon {
+    position:absolute;
+    display:flex; flex-direction:column; align-items:center;
+    cursor:pointer; user-select:none;
+    animation:riseUp linear forwards;
+    will-change:transform;
+  }
+  .balloon-body {
+    width:64px; height:78px;
+    border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; color:#fff;
+    text-shadow:0 1px 4px rgba(0,0,0,.25);
+    box-shadow:inset -8px -10px 18px rgba(0,0,0,.12), inset 4px 4px 10px rgba(255,255,255,.35), 0 6px 20px rgba(0,0,0,.15);
+    position:relative;
+    transition:transform .1s;
+  }
+  .balloon-body::after {
+    content:''; position:absolute; top:12px; left:14px;
+    width:14px; height:20px;
+    background:rgba(255,255,255,.3);
+    border-radius:50%;
+    transform:rotate(-30deg);
+  }
+  .balloon-knot {
+    width:8px; height:8px;
+    border-radius:50% 50% 30% 30%;
+    margin-top:-1px;
+  }
+  .balloon-string {
+    width:1px; height:50px;
+    background:rgba(180,120,160,.4);
+    margin-top:0;
+  }
+  @keyframes riseUp {
+    0%   { transform:translateY(0) translateX(0); opacity:1; }
+    100% { transform:translateY(-110vh) translateX(var(--drift)); opacity:.6; }
+  }
+  .balloon.pop {
+    animation:popAnim .35s ease forwards !important;
+    pointer-events:none;
+  }
+  @keyframes popAnim {
+    0%  { transform:scale(1); opacity:1; }
+    40% { transform:scale(1.5); opacity:.8; }
+    100%{ transform:scale(0); opacity:0; }
+  }
+  .balloon.wrong-pop {
+    animation:wrongPop .4s ease forwards !important;
+    pointer-events:none;
+  }
+  @keyframes wrongPop {
+    0%  { transform:scale(1) rotate(0deg); filter:brightness(1); }
+    30% { transform:scale(1.3) rotate(-10deg); filter:brightness(1.3) saturate(2); }
+    100%{ transform:scale(0) rotate(20deg); opacity:0; }
+  }
+
+  /* GAME OVERLAY MESSAGES */
+  .game-overlay {
+    position:absolute; inset:0; z-index:20;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(253,246,240,.92); backdrop-filter:blur(8px);
+    gap:1.5rem; padding:2rem;
+    text-align:center;
+    animation:fadeUp .5s ease both;
+  }
+  .game-overlay.hidden { display:none; }
+  .overlay-emoji { font-size:4rem; }
+  .overlay-title {
+    font-family:'Playfair Display',serif; font-size:clamp(1.6rem,5vw,2.4rem);
+    color:var(--deep); font-weight:700;
+  }
+  .overlay-sub { font-size:1.05rem; color:#a07090; font-style:italic; max-width:300px; line-height:1.7; }
+  .overlay-btn {
+    padding:.8rem 2.2rem;
+    background:linear-gradient(135deg,var(--rose),var(--deep));
+    color:#fff; border:none; border-radius:2rem;
+    font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:.05em;
+    cursor:pointer; box-shadow:0 4px 20px rgba(123,45,94,.3);
+    transition:transform .2s, box-shadow .2s;
+  }
+  .overlay-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(123,45,94,.4); }
+
+  /* GIFT SCREEN */
+  #screen-gift {
+    flex-direction:column; align-items:center; justify-content:flex-start;
+    padding:3rem 1.5rem 5rem; overflow-y:auto; gap:0;
+  }
+  .gift-header { text-align:center; margin-bottom:2rem; animation:fadeUp .8s ease both; }
+  .gift-header .tag { font-size:.9rem; letter-spacing:.2em; color:var(--gold); text-transform:uppercase; margin-bottom:.5rem; }
+  .gift-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,5vw,3rem); color:var(--deep); font-style:italic; }
+
+  .gift-photo-wrap {
+    width:min(480px,90vw); animation:fadeUp .8s .15s ease both; margin-bottom:2rem;
+    border-radius:1rem; overflow:hidden;
+    box-shadow:0 20px 60px rgba(123,45,94,.22);
+  }
+  .gift-photo-wrap img { width:100%; display:block; object-fit:contain; max-height:70vh; }
+
+  .gift-note { font-size:1.1rem; font-style:italic; color:#a07090; text-align:center; animation:fadeUp .8s .3s ease both; }
+
+  .btn-back {
+    margin-top:1.5rem; padding:.65rem 2rem;
+    background:transparent; border:1.5px solid var(--rose); color:var(--deep);
+    border-radius:2rem; font-family:'Cormorant Garamond',serif; font-size:1rem;
+    cursor:pointer; transition:background .2s, color .2s; animation:fadeUp .8s .4s ease both;
+  }
+  .btn-back:hover { background:var(--rose); color:#fff; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+  /* CONFETTI */
+  .conf { position:absolute; opacity:0; animation:confFall linear forwards; border-radius:2px; }
+  @keyframes confFall {
+    0%  { opacity:1; transform:translateY(0) rotate(0deg) scale(1); }
+    80% { opacity:1; }
+    100%{ opacity:0; transform:translateY(90vh) rotate(720deg) scale(.5); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="petals" id="petals"></div>
+
+<!-- CODE SCREEN -->
+<div class="screen" id="screen-code">
+  <div class="lock-icon">🌸</div>
+  <h1>Введи секретный код</h1>
+  <p>только ты знаешь эти цифры...</p>
+  <div class="code-input-wrap" id="code-inputs"></div>
+  <div class="error-msg" id="error-msg"></div>
+  <button class="btn-enter" onclick="checkCode()">Войти →</button>
+</div>
+
+<!-- CONGRATS SCREEN -->
+<div class="screen hidden" id="screen-congrats">
+  <div class="confetti-burst" id="confetti-burst"></div>
+
+  <div class="congrats-header">
+    <div class="subtitle">с днём рождения</div>
+    <h1>Моя любимая<br><em>сестрёнка</em> 🌷</h1>
+  </div>
+
+  <div class="photo-frame">
+    <img src="photo.jpg" alt="Фото">
+  </div>
+
+  <div class="congrats-text">
+    <p>Сегодня особенный день — <strong>твой день</strong>. И я так рада, что ты есть в моей жизни — моя маленькая, но такая сильная сестрёнка.</p>
+    <div class="divider"></div>
+    <p>Ты растёшь, меняешься, удивляешь меня каждый день. Знай, что я всегда рядом — что бы ни случилось, с любой радостью и любой бедой ты можешь прийти ко мне.</p>
+    <div class="divider"></div>
+    <p>Желаю тебе <strong>безграничного счастья</strong>, лёгких дорог, смелых мечт и людей, которые будут любить тебя так, как ты того заслуживаешь. 🌸</p>
+    <p style="font-style:italic; color:var(--rose); font-size:1.1rem;">С любовью, твоя сестра ♡</p>
+  </div>
+
+  <button class="btn-gift" onclick="startGame()">
+    <span class="gift-icon">🎈</span>
+    Открыть подарок
+  </button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="screen-game">
+  <div id="game-canvas-wrap">
+    <div id="game-ui">
+      <div class="game-hint">🎈 Собери имя именинницы по буквам!</div>
+      <div class="game-progress" id="game-progress"></div>
+    </div>
+    <div id="balloons-container"></div>
+
+    <!-- SUCCESS overlay -->
+    <div class="game-overlay hidden" id="overlay-win">
+      <div class="overlay-emoji">🎉</div>
+      <div class="overlay-title">Настя! Ура!</div>
+      <div class="overlay-sub">Ты собрала своё имя — теперь подарок твой!</div>
+      <button class="overlay-btn" onclick="showGift()">Открыть подарок 🎁</button>
+    </div>
+
+    <!-- FAIL overlay -->
+    <div class="game-overlay hidden" id="overlay-fail">
+      <div class="overlay-emoji">🙈</div>
+      <div class="overlay-title">Ой, не то!</div>
+      <div class="overlay-sub">Шарики разлетелись... Попробуй ещё раз — ты точно справишься!</div>
+      <button class="overlay-btn" onclick="restartGame()">Сыграть снова 🎈</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIFT SCREEN -->
+<div class="screen hidden" id="screen-gift">
+  <div class="gift-header">
+    <div class="tag">специально для тебя</div>
+    <h2>Твой подарок ✨</h2>
+  </div>
+
+  <div class="gift-photo-wrap">
+    <img src="gift.jpg" alt="Подарок">
+  </div>
+
+  <p class="gift-note">С любовью и теплом, только для тебя 🌷</p>
+  <button class="btn-back" onclick="backToCongrats()">← Назад</button>
+</div>
+
+<script>
+  const SECRET = '10052003';
+
+  // Falling petals
+  const petalColors = ['#f9d1e0','#e8a0bf','#d4a0c0','#f0c8d8','#fbe0ec'];
+  const pw = document.getElementById('petals');
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const sz = 8 + Math.random() * 10;
+    p.style.cssText = `left:${Math.random()*100}%;background:${petalColors[i%petalColors.length]};width:${sz}px;height:${sz*1.5}px;animation-duration:${5+Math.random()*8}s;animation-delay:${-Math.random()*10}s;`;
+    pw.appendChild(p);
+  }
+
+  // Code inputs
+  const wrap = document.getElementById('code-inputs');
+  for (let i = 0; i < 8; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 1;
+    inp.className = 'code-digit'; inp.dataset.index = i;
+    inp.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/,'');
+      if (e.target.value) { const n = wrap.querySelector(`[data-index="${i+1}"]`); if (n) n.focus(); }
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !e.target.value) { const p = wrap.querySelector(`[data-index="${i-1}"]`); if (p) { p.value=''; p.focus(); } }
+      if (e.key === 'Enter') checkCode();
+    });
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const t = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,8);
+      [...t].forEach((ch,idx) => { const b = wrap.querySelector(`[data-index="${idx}"]`); if (b) b.value=ch; });
+      const last = wrap.querySelector(`[data-index="${Math.min(t.length,7)}"]`); if (last) last.focus();
+    });
+    wrap.appendChild(inp);
+  }
+
+  function getCode() { return [...wrap.querySelectorAll('.code-digit')].map(i=>i.value).join(''); }
+
+  function checkCode() {
+    if (getCode() === SECRET) {
+      showCongrats();
+    } else {
+      wrap.querySelectorAll('.code-digit').forEach(b => { b.classList.add('error'); setTimeout(()=>b.classList.remove('error'),400); });
+      const em = document.getElementById('error-msg');
+      em.textContent = 'Неверный код — подсказка: это дата рождения 😉';
+      setTimeout(()=>em.textContent='', 2500);
+      wrap.querySelectorAll('.code-digit').forEach(b=>b.value='');
+      wrap.querySelector('.code-digit').focus();
+    }
+  }
+
+  function go(from, to) {
+    document.getElementById(from).classList.add('hidden');
+    document.getElementById(to).classList.remove('hidden');
+  }
+  function showCongrats() { go('screen-code','screen-congrats'); launchConfetti(90); }
+  function showGift()     { go('screen-game','screen-gift'); launchConfetti(80); }
+  function backToCongrats(){ go('screen-gift','screen-congrats'); }
+
+  // ── BALLOON GAME ──────────────────────────────────────────────
+  const WORD = ['Н','А','С','Т','Я'];
+  const JUNK = ['Б','В','Г','Д','Е','К','Л','М','О','П','Р','У','Ц','Ш','Э','Ю'];
+  const BALLOON_COLORS = [
+    ['#f472b6','#db2777'], ['#e8a0bf','#7b2d5e'], ['#fb923c','#c2410c'],
+    ['#a78bfa','#6d28d9'], ['#34d399','#065f46'], ['#60a5fa','#1d4ed8'],
+    ['#fbbf24','#b45309'], ['#f87171','#b91c1c'], ['#c084fc','#7e22ce'],
+  ];
+
+  let nextLetterIdx = 0;
+  let spawnTimer = null;
+  let balloonEls = [];
+  let gameActive = false;
+
+  function startGame() {
+    go('screen-congrats', 'screen-game');
+    setTimeout(initGame, 300);
+  }
+
+  function initGame() {
+    nextLetterIdx = 0;
+    balloonEls = [];
+    gameActive = true;
+    document.getElementById('overlay-win').classList.add('hidden');
+    document.getElementById('overlay-fail').classList.add('hidden');
+
+    // build progress cells
+    const prog = document.getElementById('game-progress');
+    prog.innerHTML = '';
+    WORD.forEach((_, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'prog-cell';
+      cell.id = `prog-${i}`;
+      prog.appendChild(cell);
+    });
+
+    // clear old balloons
+    document.getElementById('balloons-container').innerHTML = '';
+
+    // start spawning
+    spawnWave();
+  }
+
+  function restartGame() { initGame(); }
+
+  function spawnWave() {
+    if (!gameActive) return;
+    // Spawn 4-6 balloons: always include next needed letter, rest are junk
+    const count = 4 + Math.floor(Math.random() * 3);
+    const neededLetter = WORD[nextLetterIdx];
+    const letters = [neededLetter];
+
+    // fill with junk (no duplicates of needed)
+    const junkPool = JUNK.filter(l => l !== neededLetter);
+    for (let i = 1; i < count; i++) {
+      letters.push(junkPool[Math.floor(Math.random() * junkPool.length)]);
+    }
+    // shuffle
+    letters.sort(() => Math.random() - .5);
+
+    const wrap = document.getElementById('game-canvas-wrap');
+    const W = wrap.offsetWidth;
+    const usedX = [];
+
+    letters.forEach((letter, i) => {
+      setTimeout(() => {
+        if (!gameActive) return;
+        spawnBalloon(letter, W, usedX);
+      }, i * 320);
+    });
+
+    // schedule next wave
+    spawnTimer = setTimeout(spawnWave, count * 320 + 2800);
+  }
+
+  function spawnBalloon(letter, W, usedX) {
+    const container = document.getElementById('balloons-container');
+    const colorPair = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+
+    // find non-overlapping x
+    let x, tries = 0;
+    do {
+      x = 30 + Math.random() * (W - 120);
+      tries++;
+    } while (tries < 20 && usedX.some(ux => Math.abs(ux - x) < 80));
+    usedX.push(x);
+
+    const duration = 5.5 + Math.random() * 3.5;
+    const drift = (Math.random() - .5) * 120;
+
+    const el = document.createElement('div');
+    el.className = 'balloon';
+    el.style.cssText = `left:${x}px; bottom:-160px; --drift:${drift}px; animation-duration:${duration}s;`;
+    el.dataset.letter = letter;
+
+    el.innerHTML = `
+      <div class="balloon-body" style="background:radial-gradient(circle at 35% 30%, ${colorPair[0]}, ${colorPair[1]})">${letter}</div>
+      <div class="balloon-knot" style="background:${colorPair[1]}"></div>
+      <div class="balloon-string"></div>
+    `;
+
+    el.addEventListener('click', () => onBalloonClick(el, letter));
+    el.addEventListener('animationend', () => { el.remove(); });
+
+    container.appendChild(el);
+    balloonEls.push(el);
+  }
+
+  function onBalloonClick(el, letter) {
+    if (!gameActive) return;
+    const needed = WORD[nextLetterIdx];
+
+    if (letter === needed) {
+      // correct!
+      el.classList.add('pop');
+      const cell = document.getElementById(`prog-${nextLetterIdx}`);
+      cell.textContent = letter;
+      cell.classList.add('filled');
+      nextLetterIdx++;
+
+      spawnPopParticles(el);
+
+      if (nextLetterIdx === WORD.length) {
+        // WIN
+        gameActive = false;
+        clearTimeout(spawnTimer);
+        setTimeout(() => {
+          document.getElementById('overlay-win').classList.remove('hidden');
+        }, 600);
+      }
+    } else {
+      // wrong!
+      gameActive = false;
+      clearTimeout(spawnTimer);
+      el.classList.add('wrong-pop');
+
+      // flash all remaining balloons and freeze
+      document.querySelectorAll('.balloon:not(.wrong-pop)').forEach(b => {
+        b.style.animationPlayState = 'paused';
+        b.style.filter = 'grayscale(.8) opacity(.5)';
+      });
+
+      setTimeout(() => {
+        document.getElementById('overlay-fail').classList.remove('hidden');
+      }, 500);
+    }
+  }
+
+  function spawnPopParticles(balloonEl) {
+    const rect = balloonEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['#f9d1e0','#e8a0bf','#ffd700','#ff6b9d','#7b2d5e'];
+    const burst = document.getElementById('confetti-burst');
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement('div');
+      const angle = (i / 12) * 360;
+      const dist = 40 + Math.random() * 50;
+      const tx = Math.cos(angle * Math.PI/180) * dist;
+      const ty = Math.sin(angle * Math.PI/180) * dist;
+      p.style.cssText = `
+        position:fixed; left:${cx}px; top:${cy}px;
+        width:${5+Math.random()*5}px; height:${5+Math.random()*5}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        border-radius:50%; pointer-events:none; z-index:50;
+        transition:transform .5s ease, opacity .5s ease;
+        transform:translate(-50%,-50%);
+      `;
+      burst.appendChild(p);
+      requestAnimationFrame(() => {
+        p.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`;
+        p.style.opacity = '0';
+      });
+      setTimeout(()=>p.remove(), 550);
+    }
+  }
+
+  // ── CONFETTI ──────────────────────────────────────────────────
+  function launchConfetti(count=90) {
+    const burst = document.getElementById('confetti-burst');
+    const colors = ['#e8a0bf','#c9935a','#7b2d5e','#f9d1e0','#ffd700','#ff6b9d','#ffb347'];
+    for (let i = 0; i < count; i++) {
+      const c = document.createElement('div');
+      c.className = 'conf';
+      c.style.cssText = `left:${10+Math.random()*80}%;top:-10px;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.8}s;`;
+      burst.appendChild(c);
+      setTimeout(()=>c.remove(), 4000);
+    }
+  }
+
+  wrap.querySelector('.code-digit').focus();
+</script>
+</body>
+</html>
